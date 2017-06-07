@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html ng-app="demoapp">
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.min.js"></script>
+   <script src="http://cdn.leafletjs.com/leaflet-0.7.1/leaflet.js"></script>
+    <script src="leaflet.draw.js"></script>
+    <script src="angular-leaflet-directive.min.js"></script>
+    <script src="lodash.js"></script>
+    <script src="leaflet-search.js"></script>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.1/leaflet.css">
+    <link rel="stylesheet" href="leaflet.draw.css" />
+   <link rel="stylesheet" href="leaflet-search.css" />
+<style>
+
+
+body{
+
+padding:10px;
+
+}
+
+
+
+#layerspanel{
+float:left;
+height:500px;
+width:20%;
+border:2px solid #bfd0ec;
+text:sans-serif;
+background-color:#cfe0fc;
+padding-top:0px;
+margin:0px;
+}
+
+h3{
+
+background-color:#cfe0fc;
+padding:5px;
+margin:0px;
+position: relative;
+top:-20px;
+left:0;
+border-top:1px solid white;
+border-bottom:2px solid #bfd0ec;
+}
+
+#layerspanel ul
+{
+    background-color:white;
+    padding:0;
+    margin:-20px 15px 30px 15px;
+    list-style-type: none
+}
+
+#layerspanel ul li
+{
+padding:5px;
+
+border-bottom: 1px solid #cccccc;
+
+}
+
+#layerspanel ul li:hover{
+background-color:#cfe0fc;
+
+}
+
+
+#mappanel{
+width:60%;
+border:1px solid #bfd0ec;
+float:left;
+height:500px;
+}
+
+
+#legend{
+float:left;
+height:500px;
+width:20%;
+border:2px solid #bfd0ec;
+background-color:#dddddd;
+padding-top:0px;
+
+}
+
+.search-input {
+    font-family:Courier
+}
+.search-input,
+.leaflet-control-search {
+    max-width:400px;
+}
+
+</style>
+
+  <script src="angular-simple-logger.js"></script>
+   
+    <script src="ui-leaflet_dev_mapped.js"></script>
+        <link rel="stylesheet" href="bootstrap.css" />
+
+
+    <script>
+        var app = angular.module("demoapp", ['ui-leaflet']);
+        app.controller("LayersOverlayGeoJSONController", [ "$scope", '$http', 'leafletData', function($scope,$http,leafletData) {
+            angular.extend($scope, {
+                world: {
+                    lat: 22.736,
+                    lng: 77.300,
+                    zoom: 5
+                },
+
+            controls: {
+                    draw: {}},
+
+                layers: {
+                    baselayers: {
+                        osm: {
+                        name: 'OpenStreetMap',
+                        visible:false,
+                        url: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        type: 'xyz'
+                        },
+
+                         stamen: {
+                        name: 'Stamen',
+                        url: 'http://tile.stamen.com/toner/{z}/{x}/{y}.png',
+                        type: 'xyz'
+                        },
+
+
+
+                    },
+                    overlays:{
+
+  draw: {
+                            name: 'Drawing',
+                            type: 'group',
+                            visible: true,
+                            layerParams: {
+                                showOnSelector: false
+                            }
+                        }
+
+
+                    }
+                }
+            });
+
+
+
+
+
+
+  leafletData.getMap().then(function(map) {
+               leafletData.getLayers().then(function(baselayers) {
+                  var drawnItems = baselayers.overlays.draw;
+                  map.on('draw:created', function (e) {
+                    var layer = e.layer;
+                    drawnItems.addLayer(layer);
+                    console.log(JSON.stringify(layer.toGeoJSON()));
+                  });
+               });
+           });
+
+
+
+          
+    
+
+ 
+        leafletData.getMap().then(function(map) {
+            new L.Marker([0,0]).addTo(map);
+        });
+    
+
+
+
+console.log(L);
+leafletData.getMap().then(function(map) {
+            var markersLayer = new L.LayerGroup();  
+map.addLayer(markersLayer); 
+ 
+// add the search bar to the map
+  var controlSearch = new L.Control.Search({
+    
+   
+
+
+   url: 'http://nominatim.openstreetmap.org/search?format=json&q={s}',
+        jsonpParam: 'json_callback',
+        propertyName: 'display_name',
+        propertyLoc: ['lat','lon'],
+        marker: L.circleMarker([0,0],{radius:30}),
+        autoCollapse: true,
+        autoType: false,
+        minLength: 2
+       
+  });
+ 
+  map.addControl(controlSearch);
+        });
+
+
+
+
+
+
+
+
+       $http.get("pune.geo.json").success(function(data, status) {
+            angular.extend($scope.layers.overlays, {
+                pune: {
+                    name:'Pune',
+                    type: 'geoJSONShape',
+                    data: data,
+                    visible: false,
+                    layerOptions: {
+                        style: {
+                                color: '#00D',
+                                clickable:false,
+                                fillColor: 'red',
+                                weight: 2.0,
+                                opacity: 0.6,
+                                fillOpacity: 0
+                        }
+                    }
+                }
+            });
+        });
+
+
+
+      $http.get("india_5.geo.json").success(function(data, status) {
+            angular.extend($scope.layers.overlays, {
+                india: {
+                    name:'India district borders',
+                    type: 'geoJSONShape',
+                    data: data,
+                    visible: false,
+                    layerOptions: {
+                        style: {
+                                clickable: false,
+                                color: '#00D',
+                                fillColor: 'red',
+                                weight: 2.0,
+                                opacity: 0.6,
+                                fillOpacity: 0
+                        }
+                    }
+                }
+            });
+        });
+
+
+        $http.get("countries.geo.json").success(function(data, status) {
+            angular.extend($scope.layers.overlays, {
+                countries: {
+                    name:'Countries borders',
+                    type: 'geoJSONShape',
+                    data: data,
+                    visible: false,
+                    layerOptions: {
+                        style: {
+                                clickable: false,
+                                color: '#00D',
+                                fillColor: 'red',
+                                weight: 2.0,
+                                opacity: 0.6,
+                                fillOpacity: 0
+                        }
+                    }
+                }
+            });
+        });
+
+      
+
+        }]);
+    </script>
+</head>
+<body ng-controller="LayersOverlayGeoJSONController">
+
+
+<div id="layerspanel">
+    <h3>Layers</h3>
+
+<ul>
+      <li ng-repeat="(key,val) in layers.baselayers">
+        <input type="radio" value="{{layers.baselayers[key].name}}" ng-model="bl.selected" name="stuff" />
+          {{val.name}}
+      </li>
+    </ul>
+
+
+
+    <h3>Overlays</h3>
+    <ul>
+    <li ng-repeat="(key,value) in layers.overlays"><input type="checkbox" ng-model='layers.overlays[key].visible'>{{value.name}}</li>
+    </ul>
+
+</div>
+
+
+<div id='mappanel'>
+    <leaflet lf-center="world" layers="layers"  controls="controls" height="500px" width="100%"></leaflet>
+</div>
+
+<div id='legend'>
+    <h3>Legend</h3>
+</div>
+
+
+
+</body>
+</html>
+
+

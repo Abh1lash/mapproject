@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html ng-app="displayapp">
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet-src.js"></script>
+   
+    <script src="leaflet.draw.js"></script>
+    <script src="angular-leaflet-directive.min.js"></script>
+    <script src="Leaflet.GoogleMutant.js"></script>
+    <script src="leaflet-search.js"></script>
+    <script src="leaflet-realtime.js"></script>
+    <script src="angular-simple-logger.js"></script>
+    <script src="ui-leaflet_dev_mapped.js"></script>
+    <script src="http://maps.google.com/maps/api/js?key=AIzaSyBG3_BnGLLvlegdhtQE9c2o6EPaLfev2Ek&v=3.27"></script>
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="leaflet.draw.css" />
+    <link rel="stylesheet" href="leaflet-search.css" />
+    <link rel="stylesheet" href="bootstrap.css" />
+
+<style>
+  
+body{
+    padding:10px;
+    background-color: #74c1fc;
+    font-family: 'Roboto', sans-serif;
+}
+
+
+
+#sideBar{
+    background-color:white;
+    width:19%;
+    float:left;
+    box-shadow: -2px 5px 5px #888888;
+    border-radius: 0px 5px 5px 0px;
+}
+
+
+div h3{
+    color: white;
+    font-weight: 550;
+    background-color: #0061ff;
+    padding:15px;
+    margin:-1px;   
+    box-shadow: 0px 5px 5px #888888
+}
+
+
+#sideBar ul
+{
+    padding:0; 
+    margin:10px 15px 30px 15px;
+    list-style-type: none; 
+}
+
+#sideBar ul li
+{
+    padding:15px;
+    border-bottom: 1px solid #cccccc;
+}
+
+#sideBar ul li:hover{
+    background-color: #337ef7;
+    color: white;
+    box-shadow: 0px 5px 5px #888888;
+    border:none;
+}
+
+
+
+
+.leaflet-control-layers .leaflet-control-layers-expanded .leaflet-control{
+    border: none;
+    border-radius:0px;
+}
+
+.leaflet-control-layers-expanded{
+    margin:10px 0px
+}
+
+.leaflet-control-layers-base label
+{
+    padding:15px;
+    font-weight: normal;
+    width:100%;
+    border-bottom :1px solid #cccccc;
+}
+
+
+
+.leaflet-control-layers-base label:hover{
+    background-color: #0061ff;
+    color: white;
+    box-shadow: 0px 5px 5px #888888;
+    border:none;
+}
+
+
+#mappanel{
+    width:80%;
+    border:1px solid #bfd0ec;
+    float:right;
+    height:700px;
+    box-shadow: -2px 5px 5px #888888;
+}
+
+
+.leaflet-control-layers {
+    visibility: hidden !important;
+}
+
+</style>
+
+
+<script>
+var app = angular.module("displayapp", ['ui-leaflet']);
+    app.controller("RenderController", [ "$scope", '$http', 'leafletData', function($scope, $http , leafletData) {
+         angular.extend($scope, {
+                center: {
+                    lat: 22.736,
+                    lng: 77.300,
+                    zoom: 5
+                },
+                layers: {
+                    baselayers: {
+                       
+                    },
+                    overlays:{}
+                }
+            });
+
+
+
+$http.get("tax.geo.json").success(function(data, status) {
+      angular.extend($scope.layers.overlays, {
+         tax : {
+            name:'Tax',
+            type: 'geoJSONShape',
+            data: data,
+            visible: true,
+            layerOptions: {
+                style: {
+                color: 'blue',
+                fillColor: 'blue',
+                weight: 2.0,
+                opacity: 0.6,
+                fillOpacity: 0.2
+              },
+              onEachFeature: onEachFeature
+            }
+          }
+        });
+       
+
+      function onEachFeature(feature, layer) {          
+            var pop = '';
+            angular.forEach(feature.properties , function(value,key){  pop=pop+ "<b>" +key +  "</b>" + ":" +value + '<br>'; })   ;
+            layer.bindPopup(pop);
+
+            layer.on('mouseover', function(e){
+                layer.setStyle({
+                    weight: 5,
+                    color: 'red',
+                    fillColor: 'red'
+                });
+            });
+
+
+            layer.on('mouseout', function(e){
+                layer.setStyle({
+                    weight: 2,
+                    color: 'blue',
+                    fillColor: 'blue'
+             });
+          });
+        }
+      });  //tax data end
+
+
+
+
+
+
+      $http.get("literacy.geo.json").success(function(data, status) {
+        angular.extend($scope.layers.overlays, {
+          literacy: {
+            name:'Literacy',
+            type: 'geoJSONShape',
+            data: data,
+            visible: true,
+            layerOptions: {
+              style: {
+                color: 'green',
+                fillColor: 'green',
+                weight: 2.0,
+                opacity: 0.6,
+                fillOpacity: 0.2
+              },
+              onEachFeature: onEachFeature
+            }
+          }
+        });
+
+        function onEachFeature(feature, layer) {
+                
+            var pop = '';
+            angular.forEach(feature.properties , function(value,key){  pop=pop+"<b>"+ key +"</b>" +" : " +value + '<br>'; })   ;
+            layer.bindPopup(pop);
+
+            layer.on('mouseover', function(e){
+                layer.setStyle({
+                    weight: 5,
+                    color: 'red',
+                    fillColor: 'red'
+                });
+
+          });
+
+  
+             layer.on('mouseout', function(e){
+                layer.setStyle({
+                    weight: 2,
+                    color: 'green',
+                    fillColor: 'green'
+                });
+          });
+        }
+      }); //literacy data end
+
+
+leafletData.getMap().then(function(map) {
+   
+    //ADD LAYERS
+var osmAttrib='Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
+var osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: osmAttrib}); 
+var roadMutant = L.gridLayer.googleMutant({
+          maxZoom: 24,
+          type:'roadmap'
+      }).addTo(map);
+
+
+
+//LAYER CONTROL     
+var control =  L.control.layers({
+          GoogleRoadmap: roadMutant, 
+            OpenStreetMap : osm}, 
+            {}, 
+            {collapsed: false}
+            );
+control.addTo(map);
+
+
+var htmlObject = control.getContainer();
+htmlObject.style.width="100%";
+htmlObject.classList.remove("leaflet-control-layers");
+document.getElementById('sideBar').appendChild(htmlObject);
+
+
+
+//SEARCH BAR
+var controlSearch = new L.Control.Search({    
+   url: 'http://nominatim.openstreetmap.org/search?format=json&q={s}',
+        jsonpParam: 'json_callback',
+        propertyName: 'display_name',
+        propertyLoc: ['lat','lon'],
+        marker: L.circleMarker([0,0],{radius:30}),
+        autoCollapse: true,
+        autoType: false,
+        minLength: 2
+  });
+map.addControl(controlSearch);
+
+
+
+}); //leafletData end
+
+}]); //Controller end
+
+</script>
+</head>
+
+
+<body ng-controller="RenderController">
+
+<!--SIDEBAR-->
+<div id="sideBar">
+  <h3>Overlays</h3>
+  <ul>
+  <li ng-repeat='ov in layers.overlays'><input type="checkbox" ng-model='ov.visible'> {{ov.name}}  </li>
+  </ul>
+
+  <h3>Base Layers</h3>
+</div>
+<!--SIDEBAR END-->
+
+
+<!--MAP WINDOW-->
+<div id='mappanel'>
+    <leaflet lf-center="center" layers="layers"  controls="controls" height="700px" width="100%"></leaflet>
+</div>
+<!--MAP WINDOW END-->
+    
+</body>
+</html>

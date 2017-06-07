@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html ng-app="demoapp">
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.min.js"></script>
+   <script src="http://cdn.leafletjs.com/leaflet-0.7.1/leaflet.js"></script>
+    <script src="leaflet.draw.js"></script>
+    <script src="angular-leaflet-directive.min.js"></script>
+
+    <script src="leaflet-search.js"></script>
+    <script src="leaflet-realtime.js"></script>
+  <script src="angular-simple-logger.js"></script>
+    <script src="ui-leaflet_dev_mapped.js"></script>
+
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.1/leaflet.css">
+    <link rel="stylesheet" href="leaflet.draw.css" />
+   <link rel="stylesheet" href="leaflet-search.css" />
+       <link rel="stylesheet" href="bootstrap.css" />
+
+
+<style>
+
+
+body{
+    padding:10px;
+    background-color:  #8fa7f7;
+
+}
+
+
+.panel{
+    float:left;
+    width:19%;
+    background-color:white;
+    font-family: sans-serif;
+    box-shadow: 0px 5px 5px #888888;
+    padding-top:0px;
+    margin:10px 2px; 
+}
+
+div h3{
+    color: #eeeeee;
+    font-weight: 550;
+    background-color: #337ef7;
+    padding:15px;
+    margin:-1px;   
+    box-shadow: 0px 5px 5px #888888
+}
+
+.panel ul
+{
+    padding:0;
+
+    margin:10px 15px 30px 15px;
+    list-style-type: none;
+    box-shadow: 0px 5px 5px #888888;
+}
+
+.panel ul li
+{
+    padding:15px;
+    border-bottom: 1px solid #cccccc;
+
+}
+
+.panel ul li:hover{
+    background-color: #337ef7;
+color: white;
+}
+
+
+#mappanel{
+    width:80%;
+    border:1px solid #bfd0ec;
+    float:right;
+    height:700px;
+    box-shadow: 2px 5px 5px #888888;
+}
+
+
+
+
+
+.btn{
+background-color: #337ef7;
+color : white;
+border-radius: 3px;
+width: 25%;
+margin:15px 10%;
+box-shadow: 0px 5px 5px #888888;
+
+}
+
+
+
+
+.search-input {
+    font-family:sans-serif
+}
+
+.search-input,.leaflet-control-search {
+    max-width:400px;
+}
+
+</style>
+
+
+
+
+
+    <script>
+        var app = angular.module("demoapp", ['ui-leaflet']);
+        app.controller("LayersOverlayGeoJSONController", [ "$scope", '$http', 'leafletData', function($scope,$http,leafletData) {
+            angular.extend($scope, {
+                center: {
+                    lat: 22.736,
+                    lng: 77.300,
+                    zoom: 5
+                },
+
+            controls: {
+                   },
+
+                layers: {
+                    baselayers: {
+
+                        osm: {
+                        name: 'OpenStreetMap',
+                        visible:false,
+                        url: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        type: 'xyz'
+                        },
+
+                         stamen: {
+                        name: 'Stamen',
+                        url: 'http://tile.stamen.com/toner/{z}/{x}/{y}.png',
+                        type: 'xyz'
+                        }
+
+
+
+
+
+                    },
+                    overlays:{
+
+                       
+
+                    },
+
+
+
+                }
+            });
+
+
+
+
+
+
+
+
+  
+    
+
+
+
+leafletData.getMap().then(function(map) {
+  
+ 
+
+// search features
+  var controlSearch = new L.Control.Search({
+    
+   url: 'http://nominatim.openstreetmap.org/search?format=json&q={s}',
+        jsonpParam: 'json_callback',
+        propertyName: 'display_name',
+        propertyLoc: ['lat','lon'],
+        marker: L.circleMarker([0,0],{radius:30}),
+        autoCollapse: true,
+        autoType: false,
+        minLength: 2
+       
+  });
+ 
+  map.addControl(controlSearch);
+        
+
+
+
+
+
+
+//drawing features
+
+var drawnItems = new L.FeatureGroup();
+     map.addLayer(drawnItems);
+     var drawControl = new L.Control.Draw({
+         edit: {
+             featureGroup: drawnItems,
+             remove:true
+         }
+
+     });
+     map.addControl(drawControl);
+
+     
+
+
+
+
+     map.on('draw:created', function (e) {
+   var type = e.layerType;
+       layer = e.layer;
+   
+   drawnItems.addLayer(layer);
+   console.log(JSON.stringify(layer.toGeoJSON()));
+   
+});
+
+
+
+
+
+
+
+
+
+//realtime features
+
+
+
+  realtime = L.realtime({
+        url: 'https://wanderdrone.appspot.com/',
+        crossOrigin: true,
+        type: 'json'
+    }, {start:false,
+        interval: 1000
+    }).addTo(map);
+
+
+
+
+realtime.on('update', function(e) {
+    var coordPart = function(v, dirs) {
+            return dirs.charAt(v >= 0 ? 0 : 1) +
+                (Math.round(Math.abs(v) * 100) / 100).toString();
+        },
+        popupContent = function(fId) {
+            var feature = e.features[fId],
+                c = feature.geometry.coordinates;
+                
+            return 'Location : ' +
+                coordPart(c[1], 'NS') + ', ' + coordPart(c[0], 'EW');
+        },
+        bindFeaturePopup = function(fId) {
+            realtime.getLayer(fId).bindPopup(popupContent(fId));
+        },
+        updateFeaturePopup = function(fId) {
+            realtime.getLayer(fId).getPopup().setContent(popupContent(fId));
+        };
+
+    map.fitBounds(realtime.getBounds(), {maxZoom: 3});
+
+    Object.keys(e.enter).forEach(bindFeaturePopup);
+    Object.keys(e.update).forEach(updateFeaturePopup);
+});
+
+
+$scope.startRealTime = function()
+{
+realtime.start();
+}
+
+
+
+$scope.stopRealTime = function()
+{
+realtime.stop();
+}
+
+
+       
+
+
+});      //controller end
+
+
+
+
+
+
+
+
+       $http.get("pune.geo.json").success(function(data, status) {
+            angular.extend($scope.layers.overlays, {
+                pune: {
+                    name:'Pune',
+                    type: 'geoJSONShape',
+                    data: data,
+                    visible: false,
+                    layerOptions: {
+                        style: {
+                                color: '#00D',
+                                clickable:false,
+                                fillColor: 'red',
+                                weight: 2.0,
+                                opacity: 0.6,
+                                fillOpacity: 0
+                        }
+                    }
+                }
+            });
+        });
+
+
+
+      $http.get("india_5.geo.json").success(function(data, status) {
+            angular.extend($scope.layers.overlays, {
+                india: {
+                    name:'India district borders',
+                    type: 'geoJSONShape',
+                    data: data,
+                    visible: false,
+                    layerOptions: {
+                        style: {
+                                clickable: false,
+                                color: '#00D',
+                                fillColor: 'red',
+                                weight: 2.0,
+                                opacity: 0.6,
+                                fillOpacity: 0
+                        }
+                    }
+                }
+            });
+        });
+
+
+        $http.get("countries.geo.json").success(function(data, status) {
+            angular.extend($scope.layers.overlays, {
+                countries: {
+                    name:'Countries borders',
+                    type: 'geoJSONShape',
+                    data: data,
+                    visible: false,
+                    layerOptions: {
+                        style: {
+                                clickable: false,
+                                color: '#00D',
+                                fillColor: 'red',
+                                weight: 2.0,
+                                opacity: 0.6,
+                                fillOpacity: 0
+                        }
+                    }
+                }
+            });
+        });
+
+      
+
+        }]);
+
+
+
+
+
+
+
+    </script>
+</head>
+<body ng-controller="LayersOverlayGeoJSONController">
+
+
+<div class="panel">
+
+<!--
+    <h3>Layers</h3>
+
+<ul>
+      <li ng-repeat="(key,val) in layers.baselayers">
+        <input type="radio" value="{{layers.baselayers[key].name}}" ng-model="bl.selected" name="stuff" />
+          {{val.name}}
+      </li>
+    </ul>
+
+-->
+    <h3>Overlays</h3>
+    <ul>
+    <li ng-repeat="(key,value) in layers.overlays"><input type="checkbox" ng-model='layers.overlays[key].visible'>&nbsp;{{value.name}}</li>
+    </ul>
+</div>
+
+
+
+<div id='mappanel'>
+    <leaflet lf-center="center" layers="layers"  controls="controls" height="700px" width="100%"></leaflet>
+</div>
+
+<div class="panel">
+
+<h3> Real Time Tracking</h3><br><br>
+<button ng-click="startRealTime()" class="btn">Start</button>
+    <button ng-click="stopRealTime()" class="btn">Stop</button>
+
+</div>
+
+
+</body>
+</html>
+
+
